@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface ChatMessage {
   id: string;
@@ -25,41 +26,64 @@ interface ChatState {
   removePendingXDR: () => void;
 }
 
-export const useChatStore = create<ChatState>((set) => ({
-  messages: [],
-  isLoading: false,
-  isStreaming: false,
+export const useChatStore = create<ChatState>()(
+  persist(
+    (set) => ({
+      messages: [],
+      isLoading: false,
+      isStreaming: false,
 
-  addMessage: (message) =>
-    set((state) => ({
-      messages: [
-        ...state.messages,
-        {
-          id: crypto.randomUUID(),
-          ...message,
-          timestamp: new Date(),
-        },
-      ],
-    })),
+      addMessage: (message) =>
+        set((state) => ({
+          messages: [
+            ...state.messages,
+            {
+              id: crypto.randomUUID(),
+              ...message,
+              timestamp: new Date(),
+            },
+          ],
+        })),
 
-  updateMessage: (id, updates) =>
-    set((state) => ({
-      messages: state.messages.map((msg) =>
-        msg.id === id ? { ...msg, ...updates } : msg,
-      ),
-    })),
+      updateMessage: (id, updates) =>
+        set((state) => ({
+          messages: state.messages.map((msg) =>
+            msg.id === id ? { ...msg, ...updates } : msg,
+          ),
+        })),
 
-  setLoading: (isLoading) => set({ isLoading }),
+      setLoading: (isLoading) => set({ isLoading }),
 
-  setStreaming: (isStreaming) => set({ isStreaming }),
+      setStreaming: (isStreaming) => set({ isStreaming }),
 
-  clearChat: () => set({ messages: [] }),
+      clearChat: () => set({ messages: [] }),
 
-  removePendingXDR: () =>
-    set((state) => ({
-      messages: state.messages.map((msg) => ({
-        ...msg,
-        pendingXDR: undefined,
-      })),
-    })),
-}));
+      removePendingXDR: () =>
+        set((state) => ({
+          messages: state.messages.map((msg) => ({
+            ...msg,
+            pendingXDR: undefined,
+          })),
+        })),
+    }),
+    {
+      name: "stellar-defi-ai-chat",
+      partialize: (state) => ({
+        messages: state.messages.map((msg) => ({
+          ...msg,
+          timestamp: msg.timestamp.toISOString(),
+        })),
+      }),
+      merge: (persistedState, currentState) => {
+        const typedState = persistedState as any;
+        return {
+          ...currentState,
+          messages: typedState.messages?.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp),
+          })) || [],
+        };
+      },
+    },
+  ),
+);

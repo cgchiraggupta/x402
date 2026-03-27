@@ -5,13 +5,15 @@ import { WalletConnect } from "@/components/WalletConnect";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TransactionPreview } from "@/components/TransactionPreview";
+import { TransactionHistory } from "@/components/TransactionHistory";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useWalletStore } from "@/store/wallet";
 import { useChatStore } from "@/store/chat";
+import { useTransactionStore, createTransactionFromAI } from "@/store/transaction";
 import { FreighterConnector } from "@/connectors/freighter";
 import { submitTransaction } from "@/lib/stellar/submit";
 import { get_wallet_balances } from "@/lib/tools/wallet";
-import { Sparkles, ArrowUpRight, ShieldCheck, Activity } from "lucide-react";
+import { Sparkles, ArrowUpRight, ShieldCheck, Activity, History } from "lucide-react";
 
 export default function HomePage() {
   const {
@@ -28,16 +30,16 @@ export default function HomePage() {
   const { messages, addMessage, updateMessage, setLoading, clearChat } =
     useChatStore();
 
+  const { addTransaction } = useTransactionStore();
+
   const [showTransactionPreview, setShowTransactionPreview] = useState(false);
   const [pendingTransaction, setPendingTransaction] = useState<{
     xdr: string;
-    type: "swap" | "deposit" | "withdraw";
+    type: "swap" | "deposit" | "withdraw" | "x402";
     details: any;
   } | null>(null);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-
-  const isChatActive = messages.length > 0;
 
   // Scroll to bottom when new messages are added
   useEffect(() => {
@@ -155,12 +157,22 @@ export default function HomePage() {
           details: data.transactionDetails,
         });
         setShowTransactionPreview(true);
+      } else if (data.transactionDetails && data.transactionDetails.type === "x402") {
+        // x402 transactions don't need wallet signing, add directly to history
+        const tx = createTransactionFromAI(
+          "x402",
+          data.transactionDetails,
+          address,
+          data.transactionDetails.transactionHash
+        );
+        addTransaction(tx);
       }
 
       if (data.pendingXDR) {
         const newBalances = await get_wallet_balances(address);
         setBalances(newBalances);
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error sending message:", error);
       updateMessage(loadingMessageId, {
@@ -200,11 +212,22 @@ export default function HomePage() {
           content: `✅ Execution confirmed. Hash: ${result.hash.slice(0, 16)}...`,
           transactionHash: result.hash,
         });
+        
+        // Add to transaction history
+        const tx = createTransactionFromAI(
+          pendingTransaction.type,
+          pendingTransaction.details,
+          address,
+          result.hash
+        );
+        addTransaction(tx);
+        
         const newBalances = await get_wallet_balances(address);
         setBalances(newBalances);
       } else {
         throw new Error("Network submission failed");
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       updateMessage(signingMessageId, {
         content: `❌ Failed: ${error.message}`,
@@ -234,7 +257,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background bg-grid-pattern relative overflow-hidden text-foreground selection:bg-primary/30">
+    <div className="min-h-screen bg-background bg-grid-pattern relative overflow-x-hidden text-foreground selection:bg-primary/30">
       {/* Background ambient glow */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-accent/20 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
@@ -252,10 +275,11 @@ export default function HomePage() {
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(255,0,127,0.5)]">
               {/* Added support for custom Perry logo - save as public/logo.png */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo.png"
+                src="https://upload.wikimedia.org/wikipedia/en/d/dc/Perry_the_Platypus.png"
                 alt="StarDeFi Logo"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-top scale-[1.35] translate-y-1"
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
                   e.currentTarget.nextElementSibling?.classList.remove(
@@ -364,7 +388,7 @@ export default function HomePage() {
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   Instantly access the best lending rates across the Stellar
-                  Blend protocol and track your portfolio's performance.
+                  Blend protocol and track your portfolio&apos;s performance.
                 </p>
               </div>
             </div>
@@ -381,9 +405,9 @@ export default function HomePage() {
                   Natural Language
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Just type "Swap 50 XLM to USDC". Our sophisticated intent
-                  engine handles the complex pathfinding and routing behind the
-                  scenes.
+                  Just type &quot;Swap 50 XLM to USDC&quot;. Our sophisticated
+                  intent engine handles the complex pathfinding and routing
+                  behind the scenes.
                 </p>
               </div>
             </div>
@@ -395,7 +419,7 @@ export default function HomePage() {
           id="wallet-connect"
           className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in-up transition-all duration-700 scroll-mt-32"
         >
-          {/* Left Panel - Portfolio/Wallet */}
+          {/* Left Panel - Portfolio/Wallet & History */}
           <div className="lg:col-span-4 space-y-6">
             <div className="glass-panel p-1 rounded-[2rem] shadow-2xl">
               <div className="bg-[#0a0a0c] rounded-[1.8rem] p-5 h-full border border-white/5">
@@ -413,6 +437,15 @@ export default function HomePage() {
                 )}
               </div>
             </div>
+
+            {/* Transaction History */}
+            {isConnected && (
+              <div className="glass-panel p-1 rounded-[2rem] shadow-2xl">
+                <div className="bg-[#0a0a0c] rounded-[1.8rem] p-5 h-full border border-white/5">
+                  <TransactionHistory />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Panel - AI Terminal */}
@@ -429,7 +462,9 @@ export default function HomePage() {
                       StarDeFi Terminal
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground font-mono bg-white/5 px-2 py-1 rounded-md">
+                  <div
+                    className={`text-xs font-mono px-2 py-1 rounded-md font-bold tracking-wider ${isConnected ? "text-green-400 bg-green-400/10" : "text-amber-400 bg-amber-400/10"}`}
+                  >
                     Status: {isConnected ? "Online" : "Awaiting Connection"}
                   </div>
                 </div>
@@ -449,9 +484,9 @@ export default function HomePage() {
 
                   <ScrollArea ref={scrollAreaRef} className="h-full p-6">
                     {messages.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto opacity-50">
-                        <Activity className="w-12 h-12 text-primary/40 mb-4" />
-                        <p className="text-sm text-muted-foreground">
+                      <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto opacity-100">
+                        <Activity className="w-12 h-12 text-primary mb-4" />
+                        <p className="text-sm text-white/90 font-medium">
                           System ready. Connect your wallet to initialize the
                           secure DeFi terminal and start executing commands.
                         </p>

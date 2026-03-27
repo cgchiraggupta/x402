@@ -14,6 +14,7 @@ export async function get_wallet_balances(
   try {
     const account = await horizonServer.loadAccount(wallet_address);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const balances: TokenBalance[] = account.balances.map((balance: any) => {
       if (balance.asset_type === "native") {
         return {
@@ -58,6 +59,7 @@ export async function get_wallet_balances(
     );
 
     return balancesWithUSD;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     // Suppress 404 errors for unfunded/new accounts to keep the console clean
     if (error?.response?.status !== 404) {

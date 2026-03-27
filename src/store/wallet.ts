@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { TokenBalance } from "@/lib/tools/wallet";
 
 interface WalletState {
@@ -19,34 +20,48 @@ interface WalletState {
   clearWallet: () => void;
 }
 
-export const useWalletStore = create<WalletState>((set) => ({
-  address: null,
-  balances: [],
-  isConnected: false,
-  isConnecting: false,
-  network: null,
-  portfolioValueUSD: 0,
-  
-  setAddress: (address) => set({ address }),
-  setBalances: (balances) => set({ balances }),
-  setConnected: (isConnected) => set({ isConnected }),
-  setConnecting: (isConnecting) => set({ isConnecting }),
-  setNetwork: (network) => set({ network }),
-  setPortfolioValueUSD: (portfolioValueUSD) => set({ portfolioValueUSD }),
-  
-  disconnect: () => set({ 
-    address: null, 
-    balances: [], 
-    isConnected: false,
-    portfolioValueUSD: 0 
-  }),
-  
-  clearWallet: () => set({
-    address: null,
-    balances: [],
-    isConnected: false,
-    isConnecting: false,
-    network: null,
-    portfolioValueUSD: 0
-  })
-}));
+export const useWalletStore = create<WalletState>()(
+  persist(
+    (set) => ({
+      address: null,
+      balances: [],
+      isConnected: false,
+      isConnecting: false,
+      network: null,
+      portfolioValueUSD: 0,
+      
+      setAddress: (address) => set({ address }),
+      setBalances: (balances) => set({ balances }),
+      setConnected: (isConnected) => set({ isConnected }),
+      setConnecting: (isConnecting) => set({ isConnecting }),
+      setNetwork: (network) => set({ network }),
+      setPortfolioValueUSD: (portfolioValueUSD) => set({ portfolioValueUSD }),
+      
+      disconnect: () => set({ 
+        address: null, 
+        balances: [], 
+        isConnected: false,
+        portfolioValueUSD: 0 
+      }),
+      
+      clearWallet: () => set({
+        address: null,
+        balances: [],
+        isConnected: false,
+        isConnecting: false,
+        network: null,
+        portfolioValueUSD: 0
+      })
+    }),
+    {
+      name: "stellar-defi-ai-wallet",
+      partialize: (state) => ({
+        address: state.address,
+        balances: state.balances,
+        isConnected: state.isConnected,
+        network: state.network,
+        portfolioValueUSD: state.portfolioValueUSD,
+      }),
+    },
+  ),
+);

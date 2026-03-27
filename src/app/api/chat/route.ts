@@ -11,6 +11,9 @@ import {
   get_blend_pools,
   build_deposit_tx,
   build_withdraw_tx,
+  get_x402_feeds,
+  pay_for_data,
+  subscribe_to_feed,
 } from "@/lib/tools";
 
 // Configure DeepSeek instead of OpenAI
@@ -141,12 +144,13 @@ export async function POST(req: NextRequest) {
 Connected wallet: ${walletAddress}
 Current balances: ${balances ? JSON.stringify(balances) : "Unknown"}`;
 
-    let openaiMessages = [
+    const openaiMessages = [
       { role: "system" as const, content: systemWithContext },
       ...messages,
     ];
 
     let pendingXDR: string | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transactionDetails: any = null;
 
     // Agentic loop — AI can call multiple tools in sequence (max 5 iterations)
@@ -166,11 +170,13 @@ Current balances: ${balances ? JSON.stringify(balances) : "Unknown"}`;
         response = await openai.chat.completions.create({
           model: "deepseek-chat",
           messages: openaiMessages,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           tools: TOOL_DEFINITIONS as any,
           tool_choice: "auto",
           temperature: 0.7,
           max_tokens: 1000,
         });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("DeepSeek API error:", error);
         return NextResponse.json(
@@ -198,6 +204,7 @@ Current balances: ${balances ? JSON.stringify(balances) : "Unknown"}`;
 
       // Execute each tool call
       for (const toolCall of message.tool_calls) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { name, arguments: argsStr } = (toolCall as any).function;
         const args = JSON.parse(argsStr);
 
@@ -215,6 +222,7 @@ Current balances: ${balances ? JSON.stringify(balances) : "Unknown"}`;
         }
         usedTools.add(name);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let result: any;
 
         try {
@@ -302,9 +310,40 @@ Current balances: ${balances ? JSON.stringify(balances) : "Unknown"}`;
               };
               break;
 
+            case "get_x402_feeds":
+              result = await get_x402_feeds();
+              break;
+
+            case "pay_for_data":
+              const dataResult = await pay_for_data(
+                args.query,
+                args.amount,
+                args.wallet_address || walletAddress,
+              );
+              result = dataResult;
+              
+              // Create transaction details for x402 payment
+              transactionDetails = {
+                type: "x402",
+                query: args.query,
+                pricePaid: dataResult.pricePaid,
+                result: dataResult.result,
+                transactionHash: dataResult.transactionHash,
+              };
+              break;
+
+            case "subscribe_to_feed":
+              result = await subscribe_to_feed(
+                args.feed_id,
+                args.duration,
+                args.wallet_address || walletAddress,
+              );
+              break;
+
             default:
               result = { error: `Unknown tool: ${name}` };
           }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           console.error(`Tool ${name} execution error:`, error);
           result = { error: error.message || "Tool execution failed" };
@@ -325,6 +364,7 @@ Current balances: ${balances ? JSON.stringify(balances) : "Unknown"}`;
       pendingXDR: null,
       transactionDetails: null,
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Chat API error:", error);
     return NextResponse.json(

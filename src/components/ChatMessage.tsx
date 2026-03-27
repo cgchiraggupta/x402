@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Loader2, User, Bot, CheckCircle, AlertCircle } from "lucide-react";
+import { User, Bot, CheckCircle, AlertCircle } from "lucide-react";
 import { ChatMessage as ChatMessageType } from "@/store/chat";
 import { formatDistanceToNow } from "date-fns";
 
@@ -17,7 +17,6 @@ export function ChatMessage({
   onRejectTransaction,
 }: ChatMessageProps) {
   const isUser = message.role === "user";
-  const isAssistant = message.role === "assistant";
   const hasPendingTransaction = !!message.pendingXDR;
   const hasTransactionHash = !!message.transactionHash;
   const isLoading = message.isLoading;

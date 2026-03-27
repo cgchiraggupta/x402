@@ -19,6 +19,7 @@ export async function submitTransaction(
     );
 
     // Submit to Stellar network
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await horizonServer.submitTransaction(transaction as any);
 
     return {
@@ -26,6 +27,7 @@ export async function submitTransaction(
       success: true,
       ledger: result.ledger,
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Transaction submission failed:", error);
 
@@ -73,6 +75,7 @@ export async function checkTransactionStatus(hash: string): Promise<{
       confirmed: true,
       ledger: transaction.ledger_attr,
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     // Transaction might not be found yet
     if (error?.response?.status === 404) {

@@ -9,7 +9,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "StarDeFi AI - AI-powered DeFi Assistant for Stellar",
-  description: "Interact with Stellar DeFi protocols through natural language chat",
+  description:
+    "Interact with Stellar DeFi protocols through natural language chat",
 };
 
 export default function RootLayout({
@@ -19,11 +20,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

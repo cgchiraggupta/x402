@@ -116,7 +116,7 @@ export function WalletConnect() {
             <h3 className="text-base font-semibold text-white tracking-wide">
               Connect Wallet
             </h3>
-            <p className="text-xs text-white/50">Access your Stellar assets</p>
+            <p className="text-xs text-white/80">Access your Stellar assets</p>
           </div>
         </div>
 
@@ -130,7 +130,7 @@ export function WalletConnect() {
                 <p className="text-sm font-semibold text-white mb-2">
                   Freighter wallet not found
                 </p>
-                <p className="text-xs text-white/60 mb-6">
+                <p className="text-xs text-white/80 mb-6">
                   You need the Freighter extension to interact with Stellar
                   DeFi.
                 </p>
@@ -154,7 +154,7 @@ export function WalletConnect() {
                 <p className="text-sm font-semibold text-white">
                   Freighter Detected
                 </p>
-                <p className="text-xs text-white/60 mt-1">
+                <p className="text-xs text-white/80 mt-1">
                   Ready to initialize connection
                 </p>
               </div>
@@ -179,7 +179,7 @@ export function WalletConnect() {
                 )}
               </button>
 
-              <p className="text-[10px] text-center text-white/40 font-semibold uppercase tracking-wider">
+              <p className="text-[10px] text-center text-white/80 font-bold uppercase tracking-wider">
                 Secure local signing • No private keys shared
               </p>
             </div>
@@ -284,7 +284,7 @@ export function WalletConnect() {
                   <div className="text-sm font-bold text-white/90">
                     {balance.assetCode}
                   </div>
-                  <div className="text-[10px] text-white/40 uppercase tracking-wider">
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider">
                     {balance.assetIssuer
                       ? truncateAddress(balance.assetIssuer)
                       : "Native"}
@@ -316,7 +316,7 @@ export function WalletConnect() {
               <p className="text-sm font-medium text-white/80 mb-1">
                 No assets found
               </p>
-              <p className="text-xs text-white/40">Fund your wallet to begin</p>
+              <p className="text-xs text-white/60">Fund your wallet to begin</p>
             </div>
           )}
         </div>

@@ -144,12 +144,13 @@ export async function completeWalletConnection(): Promise<{
     }
 
     return { success: true, publicKey: address, error: undefined };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Wallet connection failed:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       success: false,
       publicKey: null,
-      error: error.message || "Unknown error during wallet connection",
+      error: errorMessage || "Unknown error during wallet connection",
     };
   }
 }

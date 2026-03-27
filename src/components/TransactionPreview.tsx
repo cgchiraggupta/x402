@@ -1,13 +1,27 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle, Clock, DollarSign, Percent, Wallet } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Percent,
+  Wallet,
+} from "lucide-react";
 
 interface TransactionPreviewProps {
-  type: "swap" | "deposit" | "withdraw";
+  type: "swap" | "deposit" | "withdraw" | "x402";
   details: {
     from?: string;
     to?: string;
@@ -19,6 +33,10 @@ interface TransactionPreviewProps {
     expectedOutput?: string;
     priceImpact?: string;
     fee?: string;
+    query?: string;
+    pricePaid?: number;
+    result?: any;
+    transactionHash?: string;
   };
   onApprove: () => void;
   onReject: () => void;
@@ -40,6 +58,8 @@ export function TransactionPreview({
         return `Deposit ${details.amount} USDC to ${details.poolName || "Lending Pool"}`;
       case "withdraw":
         return `Withdraw ${details.amount} from ${details.poolName || "Lending Pool"}`;
+      case "x402":
+        return `x402 Data Purchase: ${details.query?.slice(0, 50)}${details.query && details.query.length > 50 ? "..." : ""}`;
       default:
         return "Transaction Preview";
     }
@@ -53,6 +73,8 @@ export function TransactionPreview({
         return "Review deposit details before approving";
       case "withdraw":
         return "Review withdrawal details before approving";
+      case "x402":
+        return "AI-powered data purchase using x402 protocol";
       default:
         return "Review transaction details";
     }
@@ -66,6 +88,8 @@ export function TransactionPreview({
         return "default";
       case "withdraw":
         return "destructive";
+      case "x402":
+        return "default";
       default:
         return "outline";
     }
@@ -79,6 +103,8 @@ export function TransactionPreview({
         return "Deposit";
       case "withdraw":
         return "Withdraw";
+      case "x402":
+        return "x402 AI Data";
       default:
         return "Transaction";
     }
@@ -89,11 +115,17 @@ export function TransactionPreview({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <div className="text-sm font-medium text-muted-foreground">From</div>
-          <div className="text-lg font-semibold">{details.amount} {details.from}</div>
+          <div className="text-lg font-semibold">
+            {details.amount} {details.from}
+          </div>
         </div>
         <div className="space-y-1">
-          <div className="text-sm font-medium text-muted-foreground">To (Estimated)</div>
-          <div className="text-lg font-semibold">{details.expectedOutput} {details.to}</div>
+          <div className="text-sm font-medium text-muted-foreground">
+            To (Estimated)
+          </div>
+          <div className="text-lg font-semibold">
+            {details.expectedOutput} {details.to}
+          </div>
         </div>
       </div>
 
@@ -105,7 +137,13 @@ export function TransactionPreview({
             <Percent className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">Price Impact</span>
           </div>
-          <Badge variant={parseFloat(details.priceImpact || "0") > 1 ? "destructive" : "secondary"}>
+          <Badge
+            variant={
+              parseFloat(details.priceImpact || "0") > 1
+                ? "destructive"
+                : "secondary"
+            }
+          >
             {details.priceImpact || "< 0.1%"}
           </Badge>
         </div>
@@ -123,7 +161,9 @@ export function TransactionPreview({
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">Slippage Tolerance</span>
           </div>
-          <span className="text-sm font-medium">{details.slippage || "0.5"}%</span>
+          <span className="text-sm font-medium">
+            {details.slippage || "0.5"}%
+          </span>
         </div>
       </div>
     </div>
@@ -133,7 +173,9 @@ export function TransactionPreview({
     <div className="space-y-3">
       <div className="space-y-1">
         <div className="text-sm font-medium text-muted-foreground">Pool</div>
-        <div className="text-lg font-semibold">{details.poolName || "USDC Lending Pool"}</div>
+        <div className="text-lg font-semibold">
+          {details.poolName || "USDC Lending Pool"}
+        </div>
       </div>
 
       <div className="space-y-1">
@@ -160,7 +202,12 @@ export function TransactionPreview({
             <span className="text-sm">Estimated Monthly Earnings</span>
           </div>
           <span className="text-sm font-medium">
-            ${((parseFloat(details.amount) * (details.apr || 8.5) / 100 / 12)).toFixed(2)}
+            $
+            {(
+              (parseFloat(details.amount) * (details.apr || 8.5)) /
+              100 /
+              12
+            ).toFixed(2)}
           </span>
         </div>
 
@@ -179,11 +226,15 @@ export function TransactionPreview({
     <div className="space-y-3">
       <div className="space-y-1">
         <div className="text-sm font-medium text-muted-foreground">Pool</div>
-        <div className="text-lg font-semibold">{details.poolName || "Lending Pool"}</div>
+        <div className="text-lg font-semibold">
+          {details.poolName || "Lending Pool"}
+        </div>
       </div>
 
       <div className="space-y-1">
-        <div className="text-sm font-medium text-muted-foreground">Amount to Withdraw</div>
+        <div className="text-sm font-medium text-muted-foreground">
+          Amount to Withdraw
+        </div>
         <div className="text-2xl font-bold">{details.amount} USDC</div>
       </div>
 
@@ -193,9 +244,49 @@ export function TransactionPreview({
         <div className="flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500 mt-0.5" />
           <div className="text-sm text-yellow-700 dark:text-yellow-500">
-            <p className="font-medium">Note: Withdrawing will stop earning yield on this amount.</p>
-            <p className="mt-1">Funds will be available in your wallet immediately after transaction confirmation.</p>
+            <p className="font-medium">
+              Note: Withdrawing will stop earning yield on this amount.
+            </p>
+            <p className="mt-1">
+              Funds will be available in your wallet immediately after
+              transaction confirmation.
+            </p>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderX402Details = () => (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <div className="text-sm font-medium text-muted-foreground">Data Query</div>
+        <div className="text-lg font-semibold">{details.query}</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <div className="text-sm font-medium text-muted-foreground">Price Paid</div>
+          <div className="text-lg font-semibold">
+            {details.pricePaid} USDC
+          </div>
+        </div>
+        <div className="space-y-1">
+          <div className="text-sm font-medium text-muted-foreground">Transaction</div>
+          <div className="text-sm font-mono truncate">
+            {details.transactionHash?.slice(0, 16)}...
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <div className="text-sm font-medium text-muted-foreground">Data Preview</div>
+        <div className="p-3 bg-muted rounded-lg text-sm max-h-32 overflow-y-auto">
+          <pre className="whitespace-pre-wrap text-xs">
+            {JSON.stringify(details.result, null, 2)}
+          </pre>
         </div>
       </div>
     </div>
@@ -209,9 +300,7 @@ export function TransactionPreview({
             <Wallet className="h-5 w-5" />
             {getTitle()}
           </CardTitle>
-          <Badge variant={getBadgeVariant()}>
-            {getBadgeText()}
-          </Badge>
+          <Badge variant={getBadgeVariant()}>{getBadgeText()}</Badge>
         </div>
         <CardDescription>{getDescription()}</CardDescription>
       </CardHeader>
@@ -220,24 +309,27 @@ export function TransactionPreview({
         {type === "swap" && renderSwapDetails()}
         {type === "deposit" && renderDepositDetails()}
         {type === "withdraw" && renderWithdrawDetails()}
+        {type === "x402" && renderX402Details()}
 
         <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex items-start gap-2">
             <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-500 mt-0.5" />
             <div className="text-sm text-blue-700 dark:text-blue-500">
-              <p className="font-medium">This is a real blockchain transaction</p>
-              <p className="mt-1">You'll need to approve it in your Freighter wallet popup.</p>
+              <p className="font-medium">
+                This is a real blockchain transaction
+              </p>
+              <p className="mt-1">
+                {type === "x402" 
+                  ? "AI autonomously paid for premium data using x402 protocol"
+                  : "You'll need to approve it in your Freighter wallet popup."}
+              </p>
             </div>
           </div>
         </div>
       </CardContent>
 
       <CardFooter className="flex gap-3">
-        <Button
-          onClick={onApprove}
-          disabled={isLoading}
-          className="flex-1"
-        >
+        <Button onClick={onApprove} disabled={isLoading} className="flex-1">
           {isLoading ? "Processing..." : "Approve in Wallet"}
         </Button>
         <Button

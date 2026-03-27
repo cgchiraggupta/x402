@@ -8,10 +8,12 @@ export interface TokenBalance {
   usdValue?: number;
 }
 
-export async function get_wallet_balances(wallet_address: string): Promise<TokenBalance[]> {
+export async function get_wallet_balances(
+  wallet_address: string,
+): Promise<TokenBalance[]> {
   try {
     const account = await horizonServer.loadAccount(wallet_address);
-    
+
     const balances: TokenBalance[] = account.balances.map((balance: any) => {
       if (balance.asset_type === "native") {
         return {
@@ -27,7 +29,7 @@ export async function get_wallet_balances(wallet_address: string): Promise<Token
         assetIssuer: balance.asset_issuer,
       };
     });
-    
+
     // Try to get USD values for major tokens
     const balancesWithUSD = await Promise.all(
       balances.map(async (balance) => {
@@ -44,20 +46,23 @@ export async function get_wallet_balances(wallet_address: string): Promise<Token
           } else if (balance.assetCode === "ETH") {
             usdValue = parseFloat(balance.balance) * 3500; // Approx ETH price
           }
-          
+
           return {
             ...balance,
-            usdValue: parseFloat(usdValue.toFixed(2))
+            usdValue: parseFloat(usdValue.toFixed(2)),
           };
         } catch {
           return balance;
         }
-      })
+      }),
     );
-    
+
     return balancesWithUSD;
-  } catch (error) {
-    console.error("Failed to fetch balances:", error);
+  } catch (error: any) {
+    // Suppress 404 errors for unfunded/new accounts to keep the console clean
+    if (error?.response?.status !== 404) {
+      console.error("Failed to fetch balances:", error);
+    }
     return [];
   }
 }
@@ -65,9 +70,14 @@ export async function get_wallet_balances(wallet_address: string): Promise<Token
 /**
  * Get total portfolio value in USD
  */
-export async function get_portfolio_value(wallet_address: string): Promise<number> {
+export async function get_portfolio_value(
+  wallet_address: string,
+): Promise<number> {
   const balances = await get_wallet_balances(wallet_address);
-  return balances.reduce((total, balance) => total + (balance.usdValue || 0), 0);
+  return balances.reduce(
+    (total, balance) => total + (balance.usdValue || 0),
+    0,
+  );
 }
 
 /**
@@ -76,14 +86,14 @@ export async function get_portfolio_value(wallet_address: string): Promise<numbe
 export function has_sufficient_balance(
   balances: TokenBalance[],
   asset: string,
-  amount: number
+  amount: number,
 ): boolean {
-  const balance = balances.find(b => 
-    b.assetCode === asset || b.asset === asset
+  const balance = balances.find(
+    (b) => b.assetCode === asset || b.asset === asset,
   );
-  
+
   if (!balance) return false;
-  
+
   return parseFloat(balance.balance) >= amount;
 }
 
@@ -93,7 +103,7 @@ export function has_sufficient_balance(
 export function format_balance(balance: TokenBalance): string {
   const amount = parseFloat(balance.balance);
   if (amount === 0) return "0";
-  
+
   if (amount < 0.000001) {
     return amount.toExponential(6);
   } else if (amount < 0.01) {

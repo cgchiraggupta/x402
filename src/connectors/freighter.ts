@@ -2,7 +2,7 @@ import {
   isConnected,
   isAllowed,
   requestAccess,
-  getPublicKey,
+  getAddress,
   signTransaction,
   getNetwork,
 } from "@stellar/freighter-api";
@@ -13,8 +13,8 @@ import {
  */
 export async function checkFreighterInstalled(): Promise<boolean> {
   try {
-    const { isConnected: connected } = await isConnected();
-    return connected;
+    const result = await isConnected();
+    return result.isConnected;
   } catch {
     return false;
   }
@@ -30,8 +30,8 @@ export async function connectFreighter(): Promise<string | null> {
     if (!allowed) {
       await requestAccess();
     }
-    const { publicKey } = await getPublicKey();
-    return publicKey;
+    const { address } = await getAddress();
+    return address;
   } catch (error) {
     console.error("Failed to connect Freighter:", error);
     return null;
@@ -46,13 +46,18 @@ export async function connectFreighter(): Promise<string | null> {
  */
 export async function signXDR(
   xdr: string,
-  network: "TESTNET" | "PUBLIC" = "TESTNET"
+  network: "TESTNET" | "PUBLIC" = "TESTNET",
 ): Promise<string | null> {
   try {
-    const { signedTxXdr } = await signTransaction(xdr, {
-      network,
+    const networkPassphrase =
+      network === "PUBLIC"
+        ? "Public Global Stellar Network ; September 2015"
+        : "Test SDF Network ; September 2015";
+
+    const result = await signTransaction(xdr, {
+      networkPassphrase,
     });
-    return signedTxXdr;
+    return result.signedTxXdr;
   } catch (error) {
     console.error("User rejected or sign failed:", error);
     return null;
@@ -63,10 +68,12 @@ export async function signXDR(
  * Get current network from Freighter
  * @returns Promise<"TESTNET" | "PUBLIC" | null> Current network or null if failed
  */
-export async function getCurrentNetwork(): Promise<"TESTNET" | "PUBLIC" | null> {
+export async function getCurrentNetwork(): Promise<
+  "TESTNET" | "PUBLIC" | null
+> {
   try {
-    const { network } = await getNetwork();
-    return network as "TESTNET" | "PUBLIC";
+    const result = await getNetwork();
+    return result.network as "TESTNET" | "PUBLIC";
   } catch (error) {
     console.error("Failed to get network from Freighter:", error);
     return null;
@@ -87,13 +94,13 @@ export async function getWalletStatus(): Promise<{
       return { isConnected: false, publicKey: null };
     }
 
-    const { isAllowed: allowed } = await isAllowed();
-    if (!allowed) {
+    const allowedResult = await isAllowed();
+    if (!allowedResult.isAllowed) {
       return { isConnected: false, publicKey: null };
     }
 
-    const { publicKey } = await getPublicKey();
-    return { isConnected: true, publicKey };
+    const addressResult = await getAddress();
+    return { isConnected: true, publicKey: addressResult.address };
   } catch (error) {
     console.error("Failed to get wallet status:", error);
     return { isConnected: false, publicKey: null };
@@ -121,14 +128,14 @@ export async function completeWalletConnection(): Promise<{
     }
 
     // Request access if not allowed
-    const { isAllowed: allowed } = await isAllowed();
-    if (!allowed) {
+    const allowedResult = await isAllowed();
+    if (!allowedResult.isAllowed) {
       await requestAccess();
     }
 
     // Get public key
-    const { publicKey } = await getPublicKey();
-    if (!publicKey) {
+    const { address } = await getAddress();
+    if (!address) {
       return {
         success: false,
         publicKey: null,
@@ -136,7 +143,7 @@ export async function completeWalletConnection(): Promise<{
       };
     }
 
-    return { success: true, publicKey, error: undefined };
+    return { success: true, publicKey: address, error: undefined };
   } catch (error: any) {
     console.error("Wallet connection failed:", error);
     return {

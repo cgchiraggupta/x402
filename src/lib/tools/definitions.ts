@@ -151,6 +151,23 @@ export function get_tool_definition(name: string) {
 }
 
 /**
+ * Get human-readable descriptions of all tools for the system prompt
+ */
+export function get_tool_descriptions(): string {
+  return TOOL_DEFINITIONS.map(tool => {
+    const func = tool.function;
+    const params = Object.entries(func.parameters.properties || {})
+      .map(([name, prop]: [string, any]) => {
+        const type = prop.enum ? `(${prop.enum.join('|')})` : prop.type;
+        return `  - ${name}: ${type}${prop.description ? ` - ${prop.description}` : ''}`;
+      })
+      .join('\n');
+    
+    return `${func.name}: ${func.description}\n${params}`;
+  }).join('\n\n');
+}
+
+/**
  * Validate tool call parameters
  */
 export function validate_tool_call(name: string, args: any): { valid: boolean; error?: string } {

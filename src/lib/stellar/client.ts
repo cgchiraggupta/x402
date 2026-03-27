@@ -1,14 +1,23 @@
-import { Horizon, SorobanRpc } from "@stellar/stellar-sdk";
+import { Horizon } from "@stellar/stellar-sdk";
 
-const HORIZON_URL = process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-testnet.stellar.org";
-const SOROBAN_RPC_URL = process.env.NEXT_PUBLIC_SOROBAN_RPC || "https://soroban-testnet.stellar.org";
+const HORIZON_URL =
+  process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-testnet.stellar.org";
+const SOROBAN_RPC_URL =
+  process.env.NEXT_PUBLIC_SOROBAN_RPC || "https://soroban-testnet.stellar.org";
 
 export const horizonServer = new Horizon.Server(HORIZON_URL);
-export const sorobanServer = new SorobanRpc.Server(SOROBAN_RPC_URL);
 
-export const NETWORK_PASSPHRASE = process.env.NEXT_PUBLIC_STELLAR_NETWORK === "TESTNET"
-  ? "Test SDF Network ; September 2015"
-  : "Public Global Stellar Network ; September 2015";
+// Soroban RPC server - simplified for now
+export const sorobanServer = {
+  serverURL: SOROBAN_RPC_URL,
+  // We'll add actual Soroban methods as needed
+  getServerURL: () => SOROBAN_RPC_URL,
+};
+
+export const NETWORK_PASSPHRASE =
+  process.env.NEXT_PUBLIC_STELLAR_NETWORK === "TESTNET"
+    ? "Test SDF Network ; September 2015"
+    : "Public Global Stellar Network ; September 2015";
 
 /**
  * Get the appropriate Horizon server based on network
@@ -20,7 +29,7 @@ export function getHorizonServer(): Horizon.Server {
 /**
  * Get the appropriate Soroban RPC server based on network
  */
-export function getSorobanServer(): SorobanRpc.Server {
+export function getSorobanServer(): typeof sorobanServer {
   return sorobanServer;
 }
 

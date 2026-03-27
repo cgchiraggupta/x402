@@ -8,17 +8,19 @@ export interface TransactionResult {
   ledger?: number;
 }
 
-export async function submitTransaction(signedXDR: string): Promise<TransactionResult> {
+export async function submitTransaction(
+  signedXDR: string,
+): Promise<TransactionResult> {
   try {
     // Parse the signed transaction
     const transaction = TransactionBuilder.fromXDR(
       signedXDR,
-      horizonServer.serverURL
+      horizonServer.serverURL,
     );
-    
+
     // Submit to Stellar network
     const result = await horizonServer.submitTransaction(transaction as any);
-    
+
     return {
       hash: result.hash,
       success: true,
@@ -26,10 +28,10 @@ export async function submitTransaction(signedXDR: string): Promise<TransactionR
     };
   } catch (error: any) {
     console.error("Transaction submission failed:", error);
-    
+
     // Extract error details from Stellar response
     let errorMessage = "Transaction failed";
-    
+
     if (error?.response?.data) {
       const data = error.response.data;
       if (data.extras?.result_codes?.transaction) {
@@ -42,7 +44,7 @@ export async function submitTransaction(signedXDR: string): Promise<TransactionR
     } else if (error.message) {
       errorMessage = error.message;
     }
-    
+
     return {
       hash: "",
       success: false,
@@ -61,12 +63,15 @@ export async function checkTransactionStatus(hash: string): Promise<{
   error?: string;
 }> {
   try {
-    const transaction = await horizonServer.transactions().transaction(hash).call();
-    
+    const transaction = await horizonServer
+      .transactions()
+      .transaction(hash)
+      .call();
+
     return {
       success: transaction.successful,
       confirmed: true,
-      ledger: transaction.ledger,
+      ledger: transaction.ledger_attr,
     };
   } catch (error: any) {
     // Transaction might not be found yet
@@ -77,7 +82,7 @@ export async function checkTransactionStatus(hash: string): Promise<{
         error: "Transaction not found yet",
       };
     }
-    
+
     return {
       success: false,
       confirmed: false,
@@ -92,7 +97,7 @@ export async function checkTransactionStatus(hash: string): Promise<{
 export async function waitForTransactionConfirmation(
   hash: string,
   timeoutMs: number = 30000,
-  pollIntervalMs: number = 1000
+  pollIntervalMs: number = 1000,
 ): Promise<{
   success: boolean;
   confirmed: boolean;
@@ -100,18 +105,18 @@ export async function waitForTransactionConfirmation(
   error?: string;
 }> {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeoutMs) {
     const status = await checkTransactionStatus(hash);
-    
+
     if (status.confirmed) {
       return status;
     }
-    
+
     // Wait before polling again
-    await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
   }
-  
+
   return {
     success: false,
     confirmed: false,
@@ -124,10 +129,10 @@ export async function waitForTransactionConfirmation(
  */
 export function getTransactionExplorerUrl(hash: string): string {
   const isTestnet = horizonServer.serverURL.includes("testnet");
-  const baseUrl = isTestnet 
+  const baseUrl = isTestnet
     ? "https://stellar.expert/explorer/testnet/tx"
     : "https://stellar.expert/explorer/public/tx";
-  
+
   return `${baseUrl}/${hash}`;
 }
 
@@ -136,9 +141,9 @@ export function getTransactionExplorerUrl(hash: string): string {
  */
 export function getAccountExplorerUrl(address: string): string {
   const isTestnet = horizonServer.serverURL.includes("testnet");
-  const baseUrl = isTestnet 
+  const baseUrl = isTestnet
     ? "https://stellar.expert/explorer/testnet/account"
     : "https://stellar.expert/explorer/public/account";
-  
+
   return `${baseUrl}/${address}`;
 }
